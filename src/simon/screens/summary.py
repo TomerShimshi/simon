@@ -1,0 +1,50 @@
+import flet as ft
+
+from simon.app_state import AppState
+from simon.ui_helpers import primary_button, rtl_text
+
+
+def build_summary_view(page: ft.Page, state: AppState) -> ft.View:
+    session = state.session
+    current_streak = session.best_length if session else 0
+    best_streak = state.progress.best_length_ever()
+    is_new_best = current_streak > 0 and current_streak >= best_streak
+
+    async def play_again(_: ft.ControlEvent) -> None:
+        state.session = None
+        await page.push_route("/game")
+
+    async def go_home(_: ft.ControlEvent) -> None:
+        state.session = None
+        await page.push_route("/")
+
+    return ft.View(
+        route="/summary",
+        controls=[
+            ft.Column(
+                [
+                    rtl_text(
+                        "שיא חדש!" if is_new_best else "כל הכבוד!",
+                        size=36,
+                        weight=ft.FontWeight.BOLD,
+                    ),
+                    ft.Container(height=16),
+                    rtl_text(f"הרצף הנוכחי שלך: {current_streak}", size=24),
+                    ft.Container(height=8),
+                    rtl_text(f"השיא שלך: {best_streak}", size=20),
+                    ft.Container(height=32),
+                    primary_button("משחק חדש", play_again),
+                    ft.Container(height=12),
+                    ft.TextButton(
+                        content=rtl_text("חזרה לעמוד הבית", size=18),
+                        on_click=go_home,
+                    ),
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                alignment=ft.MainAxisAlignment.CENTER,
+                expand=True,
+            )
+        ],
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        vertical_alignment=ft.MainAxisAlignment.CENTER,
+    )

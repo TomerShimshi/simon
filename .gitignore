@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+build/
+.flet/
+.local_data/
+.pytest_cache/
+keystore/
+.claude/
