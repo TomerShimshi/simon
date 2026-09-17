@@ -1,2 +1,3 @@
-flet
-flet-audio
+flet==0.86.5
+flet-audio==0.86.5
+flet-web==0.86.5
