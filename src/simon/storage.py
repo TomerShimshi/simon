@@ -1,8 +1,9 @@
 import json
-import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+
+from simon.storage_paths import storage_dir as _default_storage_dir
 
 PROGRESS_FILENAME = "progress_v1.json"
 _EMPTY_PROGRESS = {"sessions": []}
@@ -13,18 +14,9 @@ MAX_STEP_MS = 1100
 SESSIONS_FOR_ADAPTATION = 3
 
 
-def _storage_dir() -> Path:
-    # Set synchronously by the Flet runtime (desktop and Android alike).
-    # Fall back to a local dir for plain `python main.py` / tests outside Flet.
-    env_dir = os.environ.get("FLET_APP_STORAGE_DATA")
-    storage_dir = Path(env_dir) if env_dir else Path(__file__).resolve().parents[2] / ".local_data"
-    storage_dir.mkdir(parents=True, exist_ok=True)
-    return storage_dir
-
-
 class ProgressStore:
     def __init__(self, storage_dir: Path | None = None) -> None:
-        self._path = (storage_dir or _storage_dir()) / PROGRESS_FILENAME
+        self._path = (storage_dir or _default_storage_dir()) / PROGRESS_FILENAME
         self._data = self._load()
 
     def _load(self) -> dict:

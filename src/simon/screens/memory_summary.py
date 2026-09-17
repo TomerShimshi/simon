@@ -4,22 +4,23 @@ from simon.app_state import AppState
 from simon.ui_helpers import primary_button, rtl_text
 
 
-def build_summary_view(page: ft.Page, state: AppState) -> ft.View:
-    session = state.session
-    current_streak = session.best_length if session else 0
-    best_streak = state.progress.best_length_ever()
-    is_new_best = current_streak > 0 and current_streak >= best_streak
+def build_memory_summary_view(page: ft.Page, state: AppState) -> ft.View:
+    session = state.memory_session
+    moves = session.moves if session else 0
+    pair_count = session.pair_count if session else 0
+    best_moves = state.memory_progress.best_moves_for(pair_count) if session else None
+    is_new_best = session is not None and moves == best_moves
 
     async def play_again(_: ft.ControlEvent) -> None:
-        state.session = None
-        await page.push_route("/game")
+        state.memory_session = None
+        await page.push_route("/memory")
 
     async def go_home(_: ft.ControlEvent) -> None:
-        state.session = None
+        state.memory_session = None
         await page.push_route("/")
 
     return ft.View(
-        route="/summary",
+        route="/memory/summary",
         controls=[
             ft.Column(
                 [
@@ -29,14 +30,17 @@ def build_summary_view(page: ft.Page, state: AppState) -> ft.View:
                         weight=ft.FontWeight.BOLD,
                     ),
                     ft.Container(height=16),
-                    rtl_text(f"הרצף הנוכחי שלך: {current_streak}", size=24),
+                    rtl_text(f"מספר הצעדים שלך: {moves}", size=24),
                     ft.Container(height=8),
-                    rtl_text(f"השיא שלך: {best_streak}", size=20),
+                    rtl_text(
+                        f"השיא שלך בגודל הזה: {best_moves}" if best_moves else "",
+                        size=20,
+                    ),
                     ft.Container(height=32),
                     primary_button("משחק חדש", play_again),
                     ft.Container(height=12),
                     ft.TextButton(
-                        content=rtl_text("חזרה לעמוד הבית", size=18),
+                        content=rtl_text("חזרה לתפריט", size=18),
                         on_click=go_home,
                     ),
                 ],

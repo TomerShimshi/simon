@@ -22,7 +22,7 @@ def _play_sound(coro) -> None:
     task.add_done_callback(lambda t: t.exception())
 
 
-def build_game_view(page: ft.Page, state: AppState) -> ft.View:
+def build_simon_game_view(page: ft.Page, state: AppState) -> ft.View:
     session = state.session
     if session is None:
         session = SimonSession(start_length=1, step_ms=state.progress.adaptive_step_ms())
@@ -94,7 +94,7 @@ def build_game_view(page: ft.Page, state: AppState) -> ft.View:
             rounds_correct=session.rounds_correct,
             step_ms=session.step_ms,
         )
-        await page.push_route("/summary")
+        await page.push_route("/simon/summary")
 
     async def handle_pad_tap(index: int) -> None:
         if lock["busy"] or session.finished:
@@ -145,7 +145,7 @@ def build_game_view(page: ft.Page, state: AppState) -> ft.View:
     page.run_task(play_sequence)
 
     return ft.View(
-        route="/game",
+        route="/simon",
         services=sound.controls,
         controls=[
             ft.Column(
@@ -156,7 +156,7 @@ def build_game_view(page: ft.Page, state: AppState) -> ft.View:
                                 content=rtl_text("סיום", size=16), on_click=end_session_now
                             ),
                             ft.TextButton(
-                                content=rtl_text("חזרה לעמוד הבית", size=16),
+                                content=rtl_text("חזרה לתפריט", size=16),
                                 on_click=exit_to_home,
                             ),
                         ],
