@@ -8,3 +8,4 @@ build/
 keystore/
 .claude/
 *.log
+scripts/.cache/

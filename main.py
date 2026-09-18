@@ -12,7 +12,11 @@ from simon.screens.memory_game import build_memory_game_view
 from simon.screens.memory_summary import build_memory_summary_view
 from simon.screens.simon_game import build_simon_game_view
 from simon.screens.simon_summary import build_simon_summary_view
+from simon.screens.subword_game import build_subword_game_view
+from simon.screens.subword_summary import build_subword_summary_view
 from simon.storage import ProgressStore
+from simon.subword_bank import load_bank, load_clues
+from simon.subword_storage import SubWordProgressStore
 
 ROUTE_BUILDERS = {
     "/": build_home_view,
@@ -20,6 +24,8 @@ ROUTE_BUILDERS = {
     "/simon/summary": build_simon_summary_view,
     "/memory": build_memory_game_view,
     "/memory/summary": build_memory_summary_view,
+    "/subword": build_subword_game_view,
+    "/subword/summary": build_subword_summary_view,
 }
 
 
@@ -30,7 +36,13 @@ def main(page: ft.Page) -> None:
     page.window.width = 420
     page.window.height = 780
 
-    state = AppState(progress=ProgressStore(), memory_progress=MemoryProgressStore())
+    state = AppState(
+        progress=ProgressStore(),
+        memory_progress=MemoryProgressStore(),
+        subword_bank=load_bank(),
+        subword_clues=load_clues(),
+        subword_progress=SubWordProgressStore(),
+    )
 
     def render_current_route(*_args) -> None:
         builder = ROUTE_BUILDERS.get(page.route, build_home_view)

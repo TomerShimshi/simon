@@ -18,6 +18,13 @@ def _memory_caption(state: AppState) -> str:
     return f"בפעם הקודמת: {last['moves']} צעדים"
 
 
+def _subword_caption(state: AppState) -> str:
+    last = state.subword_progress.last_session()
+    if last is None:
+        return "עדיין לא שיחקת"
+    return f"בפעם הקודמת: {last['words_found_count']} מילים"
+
+
 def _game_card(title: str, subtitle: str, caption: str, on_click) -> ft.Container:
     return ft.Container(
         content=ft.Column(
@@ -47,6 +54,10 @@ def build_home_view(page: ft.Page, state: AppState) -> ft.View:
         state.memory_session = None  # let /memory build a fresh grid
         await page.push_route("/memory")
 
+    async def start_subword(_: ft.ControlEvent) -> None:
+        state.subword_session = None  # let /subword build a fresh session
+        await page.push_route("/subword")
+
     return ft.View(
         route="/",
         controls=[
@@ -69,10 +80,18 @@ def build_home_view(page: ft.Page, state: AppState) -> ft.View:
                         _memory_caption(state),
                         start_memory,
                     ),
+                    ft.Container(height=16),
+                    _game_card(
+                        "בניית מילים",
+                        "מצאו מילים בתוך מילה",
+                        _subword_caption(state),
+                        start_subword,
+                    ),
                 ],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 alignment=ft.MainAxisAlignment.CENTER,
                 expand=True,
+                scroll=ft.ScrollMode.AUTO,
             )
         ],
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
