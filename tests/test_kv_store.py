@@ -2,7 +2,12 @@ import json
 import urllib.error
 from unittest.mock import MagicMock, patch
 
-from simon.kv_store import FileKeyValueStore, InMemoryKeyValueStore, UpstashKeyValueStore
+from simon.kv_store import (
+    FileKeyValueStore,
+    InMemoryKeyValueStore,
+    UpstashKeyValueStore,
+    get_default_store,
+)
 
 DEFAULT = {"sessions": []}
 
@@ -89,3 +94,54 @@ def test_upstash_store_save_does_not_raise_on_network_error():
     store = UpstashKeyValueStore("https://example.upstash.io", "token")
     with patch("urllib.request.urlopen", side_effect=urllib.error.URLError("boom")):
         store.save("progress", {"sessions": [1]})  # must not raise
+
+
+def _http_error(code: int, reason: str) -> urllib.error.HTTPError:
+    return urllib.error.HTTPError(
+        url="https://example.upstash.io/get/progress",
+        code=code,
+        msg=reason,
+        hdrs=None,
+        fp=MagicMock(read=lambda: b'{"error":"denied"}'),
+    )
+
+
+def test_upstash_store_load_returns_default_on_http_error_eg_bad_token():
+    store = UpstashKeyValueStore("https://example.upstash.io", "token")
+    with patch("urllib.request.urlopen", side_effect=_http_error(401, "Unauthorized")):
+        assert store.load("progress", DEFAULT) == DEFAULT
+
+
+def test_upstash_store_save_does_not_raise_on_http_error():
+    store = UpstashKeyValueStore("https://example.upstash.io", "token")
+    with patch("urllib.request.urlopen", side_effect=_http_error(403, "Forbidden")):
+        store.save("progress", {"sessions": [1]})  # must not raise
+
+
+def test_get_default_store_picks_upstash_when_env_vars_set(monkeypatch):
+    monkeypatch.setenv("UPSTASH_REDIS_REST_URL", "https://example.upstash.io")
+    monkeypatch.setenv("UPSTASH_REDIS_REST_TOKEN", "sometoken")
+    assert isinstance(get_default_store(), UpstashKeyValueStore)
+
+
+def test_get_default_store_falls_back_to_file_when_unset(monkeypatch):
+    monkeypatch.delenv("UPSTASH_REDIS_REST_URL", raising=False)
+    monkeypatch.delenv("UPSTASH_REDIS_REST_TOKEN", raising=False)
+    assert isinstance(get_default_store(), FileKeyValueStore)
+
+
+def test_get_default_store_strips_accidental_surrounding_quotes(monkeypatch):
+    monkeypatch.setenv("UPSTASH_REDIS_REST_URL", '"https://example.upstash.io"')
+    monkeypatch.setenv("UPSTASH_REDIS_REST_TOKEN", "'sometoken'")
+    store = get_default_store()
+    assert isinstance(store, UpstashKeyValueStore)
+    assert store._url == "https://example.upstash.io"
+    assert store._token == "sometoken"
+
+
+def test_get_default_store_strips_whitespace(monkeypatch):
+    monkeypatch.setenv("UPSTASH_REDIS_REST_URL", "  https://example.upstash.io  \n")
+    monkeypatch.setenv("UPSTASH_REDIS_REST_TOKEN", "  sometoken  \n")
+    store = get_default_store()
+    assert store._url == "https://example.upstash.io"
+    assert store._token == "sometoken"
