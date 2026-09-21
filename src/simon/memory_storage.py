@@ -1,30 +1,18 @@
-import json
 from datetime import datetime, timezone
-from pathlib import Path
 
-from simon.storage_paths import storage_dir as _default_storage_dir
+from simon.kv_store import KeyValueStore, get_default_store
 
-PROGRESS_FILENAME = "memory_progress_v1.json"
+PROGRESS_KEY = "memory_progress_v1"
 _EMPTY_PROGRESS = {"sessions": []}
 
 
 class MemoryProgressStore:
-    def __init__(self, storage_dir: Path | None = None) -> None:
-        self._path = (storage_dir or _default_storage_dir()) / PROGRESS_FILENAME
-        self._data = self._load()
-
-    def _load(self) -> dict:
-        if not self._path.is_file():
-            return json.loads(json.dumps(_EMPTY_PROGRESS))
-        try:
-            return json.loads(self._path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            return json.loads(json.dumps(_EMPTY_PROGRESS))
+    def __init__(self, store: KeyValueStore | None = None) -> None:
+        self._store = store or get_default_store()
+        self._data = self._store.load(PROGRESS_KEY, _EMPTY_PROGRESS)
 
     def _save(self) -> None:
-        self._path.write_text(
-            json.dumps(self._data, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        self._store.save(PROGRESS_KEY, self._data)
 
     def record_session(self, session_id: str, pair_count: int, moves: int, mismatches: int) -> None:
         self._data["sessions"].append(

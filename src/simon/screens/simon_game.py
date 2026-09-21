@@ -7,7 +7,9 @@ from simon.audio import SoundBoard
 from simon.models import COLORS
 from simon.session_manager import SimonSession
 from simon.storage import new_session_id
-from simon.ui_helpers import PAD_COLORS, PAD_COLORS_LIT, rtl_text
+from simon.ui_helpers import GAME_THEMES, PAD_COLORS, PAD_COLORS_LIT, chip_button, rtl_text, soft_shadow
+
+THEME = GAME_THEMES["simon"]
 
 STEP_GAP_S = 0.3  # silent gap between playback steps, on top of session.step_ms
 INTER_ROUND_PAUSE_S = 1.1
@@ -47,10 +49,11 @@ def build_simon_game_view(page: ft.Page, state: AppState) -> ft.View:
 
         pad = ft.Container(
             bgcolor=PAD_COLORS[COLORS[index]],
-            border_radius=16,
+            border_radius=20,
             expand=True,
             on_click=on_click,
             animate=ft.Animation(150, ft.AnimationCurve.EASE_OUT),
+            shadow=soft_shadow(PAD_COLORS[COLORS[index]], opacity=0.35, blur=10),
         )
         pads[index] = pad
         return pad
@@ -152,15 +155,11 @@ def build_simon_game_view(page: ft.Page, state: AppState) -> ft.View:
                 [
                     ft.Row(
                         [
-                            ft.TextButton(
-                                content=rtl_text("סיום", size=16), on_click=end_session_now
-                            ),
-                            ft.TextButton(
-                                content=rtl_text("חזרה לתפריט", size=16),
-                                on_click=exit_to_home,
-                            ),
+                            chip_button("חזרה לתפריט", exit_to_home, THEME["accent"]),
+                            rtl_text(f"סיימון {THEME['icon']}", size=20, weight=ft.FontWeight.BOLD),
+                            chip_button("סיום", end_session_now, THEME["accent"]),
                         ],
-                        alignment=ft.MainAxisAlignment.CENTER,
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     ),
                     status_label,
                     length_label,

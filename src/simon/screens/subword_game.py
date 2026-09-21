@@ -3,10 +3,11 @@ import flet as ft
 from simon.app_state import AppState
 from simon.storage import new_session_id
 from simon.subword_session import CheckResult, SubWordSession
-from simon.ui_helpers import ACCENT, primary_button, rtl_text
+from simon.ui_helpers import GAME_THEMES, chip_button, primary_button, rtl_text, soft_shadow
 
-TILE_COLOR = ACCENT
-TILE_USED_COLOR = "#C7D7EE"
+THEME = GAME_THEMES["subword"]
+TILE_COLOR = THEME["accent"]
+TILE_USED_COLOR = "#F6C8A6"
 
 FEEDBACK_TEXT = {
     CheckResult.FOUND: "מצוין! מצאת מילה",
@@ -54,12 +55,13 @@ def build_subword_game_view(page: ft.Page, state: AppState) -> ft.View:
         tile = ft.Container(
             content=rtl_text(session.tiles[index], size=30, color="#FFFFFF"),
             bgcolor=TILE_COLOR,
-            border_radius=12,
+            border_radius=14,
             width=64,
             height=64,
             alignment=ft.Alignment(0, 0),
             on_click=on_click,
             animate=ft.Animation(150, ft.AnimationCurve.EASE_OUT),
+            shadow=soft_shadow(TILE_COLOR, opacity=0.3, blur=8),
         )
         tiles[index] = tile
         return tile
@@ -133,12 +135,11 @@ def build_subword_game_view(page: ft.Page, state: AppState) -> ft.View:
                 [
                     ft.Row(
                         [
-                            ft.TextButton(content=rtl_text("סיום", size=16), on_click=finish_session),
-                            ft.TextButton(
-                                content=rtl_text("חזרה לתפריט", size=16), on_click=exit_to_home
-                            ),
+                            chip_button("חזרה לתפריט", exit_to_home, THEME["accent"]),
+                            rtl_text(f"בניית מילים {THEME['icon']}", size=20, weight=ft.FontWeight.BOLD),
+                            chip_button("סיום", finish_session, THEME["accent"]),
                         ],
-                        alignment=ft.MainAxisAlignment.CENTER,
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     ),
                     rtl_text("בנו מילים מהאותיות", size=18),
                     base_word_label,
@@ -146,19 +147,21 @@ def build_subword_game_view(page: ft.Page, state: AppState) -> ft.View:
                     attempt_label,
                     ft.Row(
                         [
-                            primary_button("בדוק", check),
-                            ft.TextButton(content=rtl_text("נקה", size=16), on_click=clear),
-                            ft.TextButton(content=rtl_text("ביטול", size=16), on_click=undo),
+                            primary_button("בדוק", check, THEME["accent"]),
+                            chip_button("נקה", clear, THEME["accent"]),
+                            chip_button("ביטול", undo, THEME["accent"]),
                         ],
                         alignment=ft.MainAxisAlignment.CENTER,
+                        wrap=True,
                     ),
                     ft.Row(
                         [
-                            ft.TextButton(content=rtl_text("רמז", size=16), on_click=show_clue),
-                            ft.TextButton(content=rtl_text("גלה מילה", size=16), on_click=reveal),
-                            ft.TextButton(content=rtl_text("מילה חדשה", size=16), on_click=new_word),
+                            chip_button("רמז", show_clue, THEME["accent"]),
+                            chip_button("גלה מילה", reveal, THEME["accent"]),
+                            chip_button("מילה חדשה", new_word, THEME["accent"]),
                         ],
                         alignment=ft.MainAxisAlignment.CENTER,
+                        wrap=True,
                     ),
                     feedback_label,
                     found_words_label,

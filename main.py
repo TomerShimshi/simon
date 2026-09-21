@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 import flet as ft
 
 from simon.app_state import AppState
+from simon.engagement_storage import EngagementStore
 from simon.memory_storage import MemoryProgressStore
 from simon.screens.home import build_home_view
 from simon.screens.memory_game import build_memory_game_view
@@ -17,6 +18,7 @@ from simon.screens.subword_summary import build_subword_summary_view
 from simon.storage import ProgressStore
 from simon.subword_bank import load_bank, load_clues
 from simon.subword_storage import SubWordProgressStore
+from simon.ui_helpers import BACKGROUND
 
 ROUTE_BUILDERS = {
     "/": build_home_view,
@@ -33,6 +35,7 @@ def main(page: ft.Page) -> None:
     page.title = "משחקי אימון"
     page.rtl = True
     page.theme_mode = ft.ThemeMode.LIGHT
+    page.bgcolor = BACKGROUND
     page.window.width = 420
     page.window.height = 780
 
@@ -42,7 +45,9 @@ def main(page: ft.Page) -> None:
         subword_bank=load_bank(),
         subword_clues=load_clues(),
         subword_progress=SubWordProgressStore(),
+        engagement=EngagementStore(),
     )
+    state.engagement.record_visit()  # once per app session, i.e. once per day opened
 
     def render_current_route(*_args) -> None:
         builder = ROUTE_BUILDERS.get(page.route, build_home_view)

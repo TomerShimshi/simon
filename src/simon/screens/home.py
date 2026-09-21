@@ -1,7 +1,10 @@
 import flet as ft
 
 from simon.app_state import AppState
-from simon.ui_helpers import ACCENT, rtl_text
+from simon.ui_helpers import ACCENT, GAME_THEMES, TEXT_SECONDARY, rtl_text, soft_shadow
+
+DOT_FILLED = ACCENT
+DOT_EMPTY = "#E3E7F0"
 
 
 def _simon_caption(state: AppState) -> str:
@@ -25,23 +28,89 @@ def _subword_caption(state: AppState) -> str:
     return f"בפעם הקודמת: {last['words_found_count']} מילים"
 
 
-def _game_card(title: str, subtitle: str, caption: str, on_click) -> ft.Container:
+def _game_card(theme_key: str, title: str, subtitle: str, caption: str, on_click) -> ft.Container:
+    theme = GAME_THEMES[theme_key]
+    icon_bubble = ft.Container(
+        content=rtl_text(theme["icon"], size=34),
+        width=64,
+        height=64,
+        border_radius=32,
+        bgcolor=theme["light"],
+        alignment=ft.Alignment(0, 0),
+    )
+    return ft.Container(
+        content=ft.Row(
+            [
+                icon_bubble,
+                ft.Column(
+                    [
+                        rtl_text(title, size=22, weight=ft.FontWeight.BOLD),
+                        rtl_text(subtitle, size=14, color=TEXT_SECONDARY),
+                        rtl_text(caption, size=13, color=theme["accent"]),
+                    ],
+                    spacing=2,
+                    horizontal_alignment=ft.CrossAxisAlignment.START,
+                ),
+            ],
+            spacing=16,
+            alignment=ft.MainAxisAlignment.CENTER,
+        ),
+        bgcolor="#FFFFFF",
+        border=ft.Border.all(2, theme["light"]),
+        border_radius=20,
+        padding=18,
+        width=330,
+        shadow=soft_shadow(),
+        on_click=on_click,
+        ink=True,
+    )
+
+
+def _week_dots(state: AppState) -> ft.Row:
+    days = state.engagement.last_n_days(7)
+    return ft.Row(
+        [
+            ft.Container(
+                width=16,
+                height=16,
+                border_radius=8,
+                bgcolor=DOT_FILLED if visited else DOT_EMPTY,
+            )
+            for _day, visited in days
+        ],
+        alignment=ft.MainAxisAlignment.CENTER,
+        spacing=8,
+    )
+
+
+def _engagement_banner(state: AppState) -> ft.Container:
+    total_days = state.engagement.total_days_played()
+    streak = state.engagement.current_streak()
+
+    if streak >= 2:
+        headline = f"\U0001f525 {streak} ימים ברצף!"
+    elif total_days <= 1:
+        headline = "ברוכים הבאים!"
+    else:
+        headline = "כיף לראות אותך היום!"
+
     return ft.Container(
         content=ft.Column(
             [
-                rtl_text(title, size=26, weight=ft.FontWeight.BOLD, color="#FFFFFF"),
-                ft.Container(height=4),
-                rtl_text(subtitle, size=16, color="#FFFFFF"),
-                ft.Container(height=8),
-                rtl_text(caption, size=14, color="#FFFFFF"),
+                rtl_text(headline, size=20, weight=ft.FontWeight.BOLD, color=ACCENT),
+                ft.Container(height=10),
+                _week_dots(state),
+                ft.Container(height=6),
+                rtl_text(f"סה״כ ימי תרגול: {total_days}", size=13, color=TEXT_SECONDARY),
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=0,
         ),
-        bgcolor=ACCENT,
-        border_radius=16,
-        padding=24,
-        width=300,
-        on_click=on_click,
+        bgcolor="#FFFFFF",
+        border_radius=20,
+        padding=18,
+        width=330,
+        shadow=soft_shadow(),
     )
 
 
@@ -64,10 +133,13 @@ def build_home_view(page: ft.Page, state: AppState) -> ft.View:
             ft.Column(
                 [
                     rtl_text("משחקי אימון", size=40, weight=ft.FontWeight.BOLD),
-                    ft.Container(height=8),
-                    rtl_text("בחר משחק לתרגול", size=18),
+                    ft.Container(height=4),
+                    rtl_text("בחר משחק לתרגול", size=18, color=TEXT_SECONDARY),
+                    ft.Container(height=20),
+                    _engagement_banner(state),
                     ft.Container(height=24),
                     _game_card(
+                        "simon",
                         "סיימון",
                         "משחק זיכרון צבעים ורצפים",
                         _simon_caption(state),
@@ -75,6 +147,7 @@ def build_home_view(page: ft.Page, state: AppState) -> ft.View:
                     ),
                     ft.Container(height=16),
                     _game_card(
+                        "memory",
                         "זיכרון קלפים",
                         "מצא את הזוגות התואמים",
                         _memory_caption(state),
@@ -82,6 +155,7 @@ def build_home_view(page: ft.Page, state: AppState) -> ft.View:
                     ),
                     ft.Container(height=16),
                     _game_card(
+                        "subword",
                         "בניית מילים",
                         "מצאו מילים בתוך מילה",
                         _subword_caption(state),

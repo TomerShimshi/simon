@@ -1,7 +1,9 @@
 import flet as ft
 
 from simon.app_state import AppState
-from simon.ui_helpers import primary_button, rtl_text
+from simon.ui_helpers import GAME_THEMES, chip_button, primary_button, rtl_text
+
+THEME = GAME_THEMES["simon"]
 
 
 def build_simon_summary_view(page: ft.Page, state: AppState) -> ft.View:
@@ -24,21 +26,19 @@ def build_simon_summary_view(page: ft.Page, state: AppState) -> ft.View:
             ft.Column(
                 [
                     rtl_text(
-                        "שיא חדש!" if is_new_best else "כל הכבוד!",
+                        f"{THEME['icon']} " + ("שיא חדש!" if is_new_best else "כל הכבוד!"),
                         size=36,
                         weight=ft.FontWeight.BOLD,
+                        color=THEME["accent"],
                     ),
                     ft.Container(height=16),
                     rtl_text(f"הרצף הנוכחי שלך: {current_streak}", size=24),
                     ft.Container(height=8),
                     rtl_text(f"השיא שלך: {best_streak}", size=20),
                     ft.Container(height=32),
-                    primary_button("משחק חדש", play_again),
+                    primary_button("משחק חדש", play_again, THEME["accent"]),
                     ft.Container(height=12),
-                    ft.TextButton(
-                        content=rtl_text("חזרה לתפריט", size=18),
-                        on_click=go_home,
-                    ),
+                    chip_button("חזרה לתפריט", go_home, THEME["accent"]),
                 ],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 alignment=ft.MainAxisAlignment.CENTER,

@@ -32,10 +32,30 @@ Locally, the same web entrypoint can be run with:
 uvicorn web:app --host 0.0.0.0 --port 8000
 ```
 
-Note: on Render's free tier the service has no persistent disk, so progress
-history (`progress_v1.json`) resets whenever the service restarts or
-redeploys -- fine for trying this out, but worth revisiting (a paid instance
-with a persistent disk) once this is used for real daily practice.
+### Persistent progress storage (Upstash Redis)
+
+Render's free tier has no persistent disk -- its filesystem resets on every
+restart/redeploy, which would otherwise wipe progress history each time the
+app is updated. All progress stores go through `src/simon/kv_store.py`,
+which uses a free Upstash Redis database when configured, falling back to
+local JSON files (in `.local_data/`) for local development.
+
+To set it up:
+
+1. Create a free account at [upstash.com](https://upstash.com) (no credit
+   card required) and create a Redis database (any region close to Render's
+   is fine -- exact region doesn't matter much for this app's tiny traffic).
+2. On the database's page, find the **REST API** section and copy the
+   `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` values.
+3. In the Render dashboard, open the `simon` service -> **Environment** ->
+   add both as environment variables with those exact names.
+4. Redeploy (Render redeploys automatically on the next git push, or use
+   **Manual Deploy** in the dashboard to apply the new env vars immediately
+   without waiting for a code change).
+
+Without these two environment variables set, the app falls back to local
+JSON files automatically -- so `python main.py` and local testing need no
+Upstash account at all.
 
 ## Build the Android App Bundle (.aab)
 

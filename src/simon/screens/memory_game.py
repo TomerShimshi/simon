@@ -6,14 +6,16 @@ import flet as ft
 from simon.app_state import AppState
 from simon.memory_session import DEFAULT_PAIR_COUNT, MemoryGameSession
 from simon.storage import new_session_id
-from simon.ui_helpers import ACCENT, rtl_text
+from simon.ui_helpers import GAME_THEMES, chip_button, rtl_text, soft_shadow
+
+THEME = GAME_THEMES["memory"]
 
 MISMATCH_PAUSE_S = 0.9
 MATCH_PAUSE_S = 0.6
 FINISH_PAUSE_S = 1.0
-FACE_DOWN_COLOR = ACCENT
+FACE_DOWN_COLOR = THEME["accent"]
 FACE_UP_COLOR = "#FFFFFF"
-MATCHED_COLOR = "#C8E6C9"
+MATCHED_COLOR = "#BFEBD9"
 
 
 def _grid_columns(total_cards: int) -> int:
@@ -91,10 +93,11 @@ def build_memory_game_view(page: ft.Page, state: AppState) -> ft.View:
         card = ft.Container(
             content=rtl_text("", size=32),
             bgcolor=FACE_DOWN_COLOR,
-            border_radius=12,
+            border_radius=14,
             alignment=ft.Alignment(0, 0),
             on_click=on_click,
             animate=ft.Animation(150, ft.AnimationCurve.EASE_OUT),
+            shadow=soft_shadow(FACE_DOWN_COLOR, opacity=0.25, blur=8),
         )
         cards[index] = card
         return card
@@ -118,12 +121,11 @@ def build_memory_game_view(page: ft.Page, state: AppState) -> ft.View:
                 [
                     ft.Row(
                         [
-                            ft.TextButton(
-                                content=rtl_text("חזרה לתפריט", size=16),
-                                on_click=exit_to_home,
-                            ),
+                            chip_button("חזרה לתפריט", exit_to_home, THEME["accent"]),
+                            rtl_text(f"זיכרון קלפים {THEME['icon']}", size=20, weight=ft.FontWeight.BOLD),
+                            ft.Container(width=110),
                         ],
-                        alignment=ft.MainAxisAlignment.CENTER,
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     ),
                     status_label,
                     moves_label,
