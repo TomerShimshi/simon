@@ -36,3 +36,12 @@ def test_best_words_found_count_tracks_the_max():
     store.record_session(new_session_id(), base_words=["שלום"], words_found_count=1, hints_used=0)
     store.record_session(new_session_id(), base_words=["מכתב"], words_found_count=3, hints_used=1)
     assert store.best_words_found_count() == 3
+
+
+def test_recent_sessions_limited_to_window():
+    store = SubWordProgressStore(store=InMemoryKeyValueStore())
+    for i in range(5):
+        store.record_session(new_session_id(), base_words=["שלום"], words_found_count=i, hints_used=0)
+    recent = store.recent_sessions(n=3)
+    assert len(recent) == 3
+    assert [s["words_found_count"] for s in recent] == [2, 3, 4]

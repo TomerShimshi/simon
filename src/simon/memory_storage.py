@@ -30,6 +30,9 @@ class MemoryProgressStore:
         sessions = self._data["sessions"]
         return sessions[-1] if sessions else None
 
+    def recent_sessions(self, n: int = 10) -> list[dict]:
+        return self._data["sessions"][-n:]
+
     def best_moves_for(self, pair_count: int) -> int | None:
         """Fewest moves ever taken to complete a grid of this exact size --
         move counts aren't comparable across different grid sizes, so the

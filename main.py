@@ -11,6 +11,7 @@ from simon.memory_storage import MemoryProgressStore
 from simon.screens.home import build_home_view
 from simon.screens.memory_game import build_memory_game_view
 from simon.screens.memory_summary import build_memory_summary_view
+from simon.screens.progress_view import build_progress_view
 from simon.screens.simon_game import build_simon_game_view
 from simon.screens.simon_summary import build_simon_summary_view
 from simon.screens.subword_game import build_subword_game_view
@@ -28,6 +29,7 @@ ROUTE_BUILDERS = {
     "/memory/summary": build_memory_summary_view,
     "/subword": build_subword_game_view,
     "/subword/summary": build_subword_summary_view,
+    "/progress": build_progress_view,
 }
 
 

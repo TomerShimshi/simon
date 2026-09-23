@@ -39,3 +39,12 @@ def test_best_moves_for_tracks_fewest_per_grid_size():
 
     assert store.best_moves_for(3) == 4
     assert store.best_moves_for(5) == 3
+
+
+def test_recent_sessions_limited_to_window():
+    store = MemoryProgressStore(store=InMemoryKeyValueStore())
+    for i in range(5):
+        store.record_session(new_session_id(), pair_count=3, moves=i, mismatches=0)
+    recent = store.recent_sessions(n=3)
+    assert len(recent) == 3
+    assert [s["moves"] for s in recent] == [2, 3, 4]

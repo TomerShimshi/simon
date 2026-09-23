@@ -1,7 +1,7 @@
 import flet as ft
 
 from simon.app_state import AppState
-from simon.ui_helpers import ACCENT, GAME_THEMES, TEXT_SECONDARY, rtl_text, soft_shadow
+from simon.ui_helpers import ACCENT, GAME_THEMES, TEXT_SECONDARY, chip_button, rtl_text, soft_shadow
 
 DOT_FILLED = ACCENT
 DOT_EMPTY = "#E3E7F0"
@@ -127,6 +127,9 @@ def build_home_view(page: ft.Page, state: AppState) -> ft.View:
         state.subword_session = None  # let /subword build a fresh session
         await page.push_route("/subword")
 
+    async def go_progress(_: ft.ControlEvent) -> None:
+        await page.push_route("/progress")
+
     return ft.View(
         route="/",
         controls=[
@@ -161,6 +164,8 @@ def build_home_view(page: ft.Page, state: AppState) -> ft.View:
                         _subword_caption(state),
                         start_subword,
                     ),
+                    ft.Container(height=20),
+                    chip_button("\U0001f4ca ההתקדמות שלי", go_progress, ACCENT),
                 ],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 alignment=ft.MainAxisAlignment.CENTER,

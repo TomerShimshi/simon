@@ -68,6 +68,35 @@ def primary_button(label: str, on_click, color: str | None = None) -> ft.Elevate
     )
 
 
+def bar_chart(values: list[float], color: str, max_bar_height: float = 90, bar_width: float = 22) -> ft.Container:
+    """A minimal bottom-aligned bar chart -- no charting library, just
+    height-scaled Containers, to match the rest of the app's plain-Flet
+    visual style and avoid adding another versioned extension package
+    dependency (flet-audio and flet-web both caused real friction earlier
+    in this project). `values` is oldest-to-newest, left-to-right within
+    the row regardless of page RTL (each bar has no inherent reading
+    direction, so this reads fine either way)."""
+    peak = max(values) if values else 0
+    bars = [
+        ft.Container(
+            width=bar_width,
+            height=max(6, (v / peak) * max_bar_height) if peak else 6,
+            bgcolor=color,
+            border_radius=6,
+        )
+        for v in values
+    ]
+    return ft.Container(
+        content=ft.Row(
+            bars,
+            alignment=ft.MainAxisAlignment.CENTER,
+            vertical_alignment=ft.CrossAxisAlignment.END,
+            spacing=6,
+        ),
+        height=max_bar_height,
+    )
+
+
 def chip_button(label: str, on_click, color: str = ACCENT) -> ft.TextButton:
     """A small pill-shaped secondary action (clear/undo/hint-style buttons)
     tinted with the current game's accent color, instead of a plain

@@ -36,6 +36,9 @@ class SubWordProgressStore:
         sessions = self._data["sessions"]
         return sessions[-1] if sessions else None
 
+    def recent_sessions(self, n: int = 10) -> list[dict]:
+        return self._data["sessions"][-n:]
+
     def best_words_found_count(self) -> int | None:
         counts = [s["words_found_count"] for s in self._data["sessions"]]
         return max(counts, default=None)
