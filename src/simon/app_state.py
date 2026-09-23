@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from simon.engagement_storage import EngagementStore
+from simon.kv_store import NamespacedKeyValueStore, get_default_store
 from simon.memory_session import MemoryGameSession
 from simon.memory_storage import MemoryProgressStore
 from simon.session_manager import SimonSession
@@ -11,12 +12,30 @@ from simon.subword_storage import SubWordProgressStore
 
 @dataclass
 class AppState:
-    progress: ProgressStore
-    memory_progress: MemoryProgressStore
     subword_bank: dict[str, list[str]]
     subword_clues: dict[str, str]
-    subword_progress: SubWordProgressStore
-    engagement: EngagementStore
+
+    # None until a profile is chosen on the picker screen -- main.py's
+    # routing gates every other screen on `profile` being set, so by the
+    # time any game screen actually runs, these are guaranteed populated.
+    profile: str | None = None
+    progress: ProgressStore | None = None
+    memory_progress: MemoryProgressStore | None = None
+    subword_progress: SubWordProgressStore | None = None
+    engagement: EngagementStore | None = None
+
     session: SimonSession | None = None
     memory_session: MemoryGameSession | None = None
     subword_session: SubWordSession | None = None
+
+    def activate_profile(self, profile: str) -> None:
+        """Gives this profile its own namespaced view of the storage
+        backend, so e.g. "efraim" and "tomer" never see each other's
+        progress even though they share the same Upstash database."""
+        store = NamespacedKeyValueStore(get_default_store(), profile)
+        self.profile = profile
+        self.progress = ProgressStore(store=store)
+        self.memory_progress = MemoryProgressStore(store=store)
+        self.subword_progress = SubWordProgressStore(store=store)
+        self.engagement = EngagementStore(store=store)
+        self.engagement.record_visit()

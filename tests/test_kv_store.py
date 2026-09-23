@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 from simon.kv_store import (
     FileKeyValueStore,
     InMemoryKeyValueStore,
+    NamespacedKeyValueStore,
     UpstashKeyValueStore,
     get_default_store,
 )
@@ -27,6 +28,23 @@ def test_file_store_falls_back_to_default_on_corrupt_json(tmp_path):
     (tmp_path / "progress.json").write_text("not json", encoding="utf-8")
     store = FileKeyValueStore(tmp_path)
     assert store.load("progress", DEFAULT) == DEFAULT
+
+
+def test_file_store_treats_colon_as_a_subdirectory(tmp_path):
+    """Regression test: a raw "namespace:key.json" filename is a broken
+    Windows Alternate Data Stream name, not a real file."""
+    store = FileKeyValueStore(tmp_path)
+    store.save("efraim:progress_v1", {"sessions": [1]})
+    assert (tmp_path / "efraim" / "progress_v1.json").is_file()
+    assert store.load("efraim:progress_v1", DEFAULT) == {"sessions": [1]}
+
+
+def test_file_store_namespaced_keys_do_not_collide(tmp_path):
+    store = FileKeyValueStore(tmp_path)
+    store.save("efraim:progress_v1", {"sessions": ["efraim's"]})
+    store.save("tomer:progress_v1", {"sessions": ["tomer's"]})
+    assert store.load("efraim:progress_v1", DEFAULT) == {"sessions": ["efraim's"]}
+    assert store.load("tomer:progress_v1", DEFAULT) == {"sessions": ["tomer's"]}
 
 
 def test_file_store_uses_separate_files_per_key(tmp_path):
@@ -145,3 +163,23 @@ def test_get_default_store_strips_whitespace(monkeypatch):
     store = get_default_store()
     assert store._url == "https://example.upstash.io"
     assert store._token == "sometoken"
+
+
+def test_namespaced_store_prefixes_keys_on_the_inner_store():
+    inner = InMemoryKeyValueStore()
+    namespaced = NamespacedKeyValueStore(inner, "efraim")
+    namespaced.save("progress_v1", {"sessions": [1]})
+    assert inner.load("efraim:progress_v1", {}) == {"sessions": [1]}
+    assert namespaced.load("progress_v1", {}) == {"sessions": [1]}
+
+
+def test_namespaced_store_isolates_different_namespaces():
+    inner = InMemoryKeyValueStore()
+    efraim = NamespacedKeyValueStore(inner, "efraim")
+    tomer = NamespacedKeyValueStore(inner, "tomer")
+
+    efraim.save("progress_v1", {"sessions": ["efraim's"]})
+    tomer.save("progress_v1", {"sessions": ["tomer's"]})
+
+    assert efraim.load("progress_v1", {}) == {"sessions": ["efraim's"]}
+    assert tomer.load("progress_v1", {}) == {"sessions": ["tomer's"]}

@@ -6,20 +6,18 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 import flet as ft
 
 from simon.app_state import AppState
-from simon.engagement_storage import EngagementStore
-from simon.memory_storage import MemoryProgressStore
 from simon.screens.home import build_home_view
 from simon.screens.memory_game import build_memory_game_view
 from simon.screens.memory_summary import build_memory_summary_view
+from simon.screens.profile_picker import build_profile_picker_view
 from simon.screens.progress_view import build_progress_view
 from simon.screens.simon_game import build_simon_game_view
 from simon.screens.simon_summary import build_simon_summary_view
 from simon.screens.subword_game import build_subword_game_view
 from simon.screens.subword_summary import build_subword_summary_view
-from simon.storage import ProgressStore
 from simon.subword_bank import load_bank, load_clues
-from simon.subword_storage import SubWordProgressStore
 from simon.ui_helpers import BACKGROUND
+from simon.user_profile import profile_from_route, route_path
 
 ROUTE_BUILDERS = {
     "/": build_home_view,
@@ -41,22 +39,24 @@ def main(page: ft.Page) -> None:
     page.window.width = 420
     page.window.height = 780
 
-    state = AppState(
-        progress=ProgressStore(),
-        memory_progress=MemoryProgressStore(),
-        subword_bank=load_bank(),
-        subword_clues=load_clues(),
-        subword_progress=SubWordProgressStore(),
-        engagement=EngagementStore(),
-    )
-    state.engagement.record_visit()  # once per app session, i.e. once per day opened
+    state = AppState(subword_bank=load_bank(), subword_clues=load_clues())
 
     def render_current_route(*_args) -> None:
-        builder = ROUTE_BUILDERS.get(page.route, build_home_view)
         # reset per-screen handlers so a stale closure from the previous
         # screen never outlives its view
         page.on_resize = None
         page.views.clear()
+
+        if state.profile is None:
+            requested = profile_from_route(page.route)
+            if requested:
+                state.activate_profile(requested)
+            else:
+                page.views.append(build_profile_picker_view(page, state))
+                page.update()
+                return
+
+        builder = ROUTE_BUILDERS.get(route_path(page.route), build_home_view)
         page.views.append(builder(page, state))
         page.update()
 

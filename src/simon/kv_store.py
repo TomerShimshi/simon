@@ -44,7 +44,15 @@ class FileKeyValueStore:
         self._directory = directory
 
     def _path(self, key: str) -> Path:
-        return self._directory / f"{key}.json"
+        # NamespacedKeyValueStore joins namespace and key with ":" (the
+        # idiomatic Redis separator), but ":" is an NTFS Alternate Data
+        # Stream separator on Windows -- a raw "efraim:progress_v1.json"
+        # filename silently creates a broken 0-byte file there instead of
+        # erroring. Treating ":" as a path separator sidesteps this
+        # entirely and reads naturally as "one subdirectory per namespace".
+        *parts, filename = key.split(":")
+        directory = self._directory.joinpath(*parts) if parts else self._directory
+        return directory / f"{filename}.json"
 
     def load(self, key: str, default: dict) -> dict:
         path = self._path(key)
@@ -56,9 +64,28 @@ class FileKeyValueStore:
             return json.loads(json.dumps(default))
 
     def save(self, key: str, data: dict) -> None:
-        self._path(key).write_text(
-            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        path = self._path(key)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+class NamespacedKeyValueStore:
+    """Wraps another store, prefixing every key with a namespace -- used to
+    give each user profile (e.g. "efraim", "tomer") completely separate
+    progress records while sharing the same underlying backend/connection."""
+
+    def __init__(self, inner: KeyValueStore, namespace: str) -> None:
+        self._inner = inner
+        self._namespace = namespace
+
+    def _key(self, key: str) -> str:
+        return f"{self._namespace}:{key}"
+
+    def load(self, key: str, default: dict) -> dict:
+        return self._inner.load(self._key(key), default)
+
+    def save(self, key: str, data: dict) -> None:
+        self._inner.save(self._key(key), data)
 
 
 class InMemoryKeyValueStore:
